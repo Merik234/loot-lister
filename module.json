@@ -1,0 +1,14 @@
+{
+    "disableAutoUpdate": false,
+    "name": "loot-lister",
+    "options": {
+        "guiName": "Loot Lister",
+        "cliName": "Loot Lister",
+        "settingsVersion": 1,
+        "settingsFile": "config.json",
+        "settingsMigrator": "settings.js"
+    },
+    "author": "Merik234",
+    "description": "Writes messages in the Toolbox chat whenever an item drops (can ignore items)",
+    "servers": ["https://raw.githubusercontent.com/Merik234/loot-lister/main/"]
+}
