@@ -6,41 +6,36 @@ module.exports = function LootLister(mod) {
 	mod.command.add("ll", {
 		$none() {
 			mod.settings.enabled = !mod.settings.enabled;
-			send(`${mod.settings.enabled ? 'en' : 'dis'}abled`);
+			sendMessage(`${mod.settings.enabled ? 'en' : 'dis'}abled`);
 		},
 		track(item_id) {
 			if (item_id === undefined) {
-				send(`write an item ID`);
+				sendMessage(`write an item ID`);
 				return;
 			}
 			mod.settings.items[item_id] = {tracked: true};
-			send(`tracking ${item_id}: ${getName(item_id)}`);
+			printTracking(parseInt(item_id), true);
 		},
 		ignore(item_id) {
 			if (item_id === undefined) {
-				send(`write an item ID`);
+				sendMessage(`write an item ID`);
 				return;
 			}
 			mod.settings.items[item_id] = {tracked: false};
-			send(`ignoring ${item_id}: ${getName(item_id)}`);
+			printTracking(parseInt(item_id), false);
 		}
 	});
 	
 	//Testing stuff
-	d.hook('S_BOARD_ITEM_LIST', 1, (event) => {
-		d.command.message("S_BOARD_ITEM_LIST");
-		d.log("S_BOARD_ITEM_LIST");
-		d.log(event);	
+	mod.hook('S_BOARD_ITEM_LIST', 1, (event) => {
+		mod.command.message("S_BOARD_ITEM_LIST");
+		mod.log("S_BOARD_ITEM_LIST");
+		mod.log(event);	
 	})
-	d.hook('S_ENABLE_DISABLE_SELLABLE_ITEM_LIST', 2, (event) => {
-		d.command.message("S_ENABLE_DISABLE_SELLABLE_ITEM_LIST");
-		d.log("S_ENABLE_DISABLE_SELLABLE_ITEM_LIST");
-		d.log(event);
-	})
-	d.hook('S_RIGHT_ITEM_LIST', 1, (event) => {
-		d.command.message("S_RIGHT_ITEM_LIST");
-		d.log("S_RIGHT_ITEM_LIST");
-		d.log(event);
+	mod.hook('S_RIGHT_ITEM_LIST', 1, (event) => {
+		mod.command.message("S_RIGHT_ITEM_LIST");
+		mod.log("S_RIGHT_ITEM_LIST");
+		mod.log(event);
 	})
 	
 	//Array for just dropped items
@@ -48,10 +43,10 @@ module.exports = function LootLister(mod) {
 	//to make certain the tracked items are only printed once
 	let first = true;
 	
-	d.hook('S_SPAWN_DROPITEM', 9, (event) => {
+	mod.hook('S_SPAWN_DROPITEM', 9, (event) => {
 		//ignore if set to ignore
-		if (items[id] !== undefined)
-			if (items[id].tracked === false)
+		if (mod.settings.items[event.id] !== undefined)
+			if (mod.settings.items[event.id].tracked === false)
 				return;
 		
 		//if not in dropped Array, add to Array
@@ -75,10 +70,10 @@ module.exports = function LootLister(mod) {
 		//print all dropped items we tracked, like this:
 		//Dropped: <id> - <name> (<amount>) <stacks>x
 		//Dropped: 1 - Cookie (3) 5x
-		dropped.sort(function(a, b){return a.id - b.id}).forEach(drop => { sendMessage('Dropped: ' + drop.id + ' - ' + getName(drop.id) + ' (' + drop.amount + ') ' + drop.stacks + 'x') });
+		dropped.sort(function(a, b){return a.id - b.id}).forEach(drop => { printLoot(drop) });
 		//Empty dropped Array for next batch of loot
 		dropped = [];
-		//Allow the d.hook to call this function again
+		//Allow the mod.hook to call this function again
 		first = true;
 	}
 	function delay(milliseconds){
@@ -86,16 +81,28 @@ module.exports = function LootLister(mod) {
 			setTimeout(resolve, milliseconds);
 		});
 	}
-	function getName(id) {
-		d.queryData("/StrSheet_Item/String@id=?/", [id]).then(res => {
-			if (res !== null)
-				return res;
+	function printLoot(drop) {
+		mod.queryData("/StrSheet_Item/String@id=?/", [drop.id]).then(res => {
+			if (res !== null) {
+				sendMessage(`Dropped: ${drop.id} - ${res.attributes.string} (${drop.amount}) ${drop.stacks}x`);
+			}
 			else
-				return "       ";
+				sendMessage(`Dropped: ${drop.id} -         (${drop.amount}) ${drop.stacks}x`);
+		});
+	}
+	function printTracking(id, tracking) {
+		sendMessage("alive");
+		mod.queryData("/StrSheet_Item/String@id=?/", [id]).then(res => {
+			sendMessage("alive");
+			if (res !== null) {
+				sendMessage(`${tracking ? "tracking" : "ignoring"} ${id}: ${res.attributes.string}`);
+			}
+			else
+				sendMessage(`${tracking ? "tracking" : "ignoring"} ${id}: UNKNOWN ITEM`);
 		});
 	}
 	//print message template
 	function sendMessage(msg) {
-		d.command.message(msg)
+		mod.command.message(msg)
 	}
 }
