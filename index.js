@@ -46,7 +46,7 @@ module.exports = function LootLister(mod) {
 	mod.hook('S_SPAWN_DROPITEM', 9, (event) => {
 		//ignore if set to ignore
 		if (mod.settings.items[event.id] !== undefined)
-			if (mod.settings.items[event.id].tracked === false)
+			if (mod.settings.items[toString(event.id)].tracked === false)
 				return;
 		
 		//if not in dropped Array, add to Array
